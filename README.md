@@ -57,12 +57,4 @@ pip install -r requirements.txt
 3. **Get Word Documents in `output_files/`**:
    The converted, editable Word documents (`.docx`) will be saved in the `output_files/` folder under the same filenames.
 
----
 
-## 🧪 Verification
-
-You can run the layout test script to verify OCR, table extraction, and coordinate mapping:
-```bash
-python verify_install.py
-```
-This script generates mock documents with dummy tables and text to assert that table borders are drawn and text is extracted accurately.
