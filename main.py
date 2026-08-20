@@ -1,7 +1,15 @@
 import os
 import sys
 import time
-from ocr_engine import is_scanned_pdf, make_searchable_pdf, convert_pdf_to_docx
+from ocr_engine import (
+    is_scanned_pdf, 
+    make_searchable_pdf, 
+    convert_pdf_to_docx, 
+    convert_image_or_scanned_pdf_to_docx,
+    is_image_file, 
+    convert_image_to_pdf, 
+    IMAGE_EXTENSIONS
+)
 
 # Define project directories relative to the script location
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,87 +23,64 @@ def ensure_directories():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def process_pdfs():
+def process_documents():
     """
-    Main loop that processes all PDFs in the upload folder.
+    Main loop that processes all PDFs and Images in the upload folder.
     """
     ensure_directories()
     
-    # Get all PDF files in the upload directory
-    pdf_files = [
+    # Get all PDF and Image files in the upload directory
+    input_files = [
         f for f in os.listdir(UPLOAD_DIR) 
-        if f.lower().endswith(".pdf") and not f.startswith("temp_")
+        if (f.lower().endswith(".pdf") or is_image_file(f)) and not f.startswith("temp_")
     ]
     
-    if not pdf_files:
+    if not input_files:
         print("\n========================================================")
-        print("                 PDF TO WORD CONVERTER")
+        print("          OFFLINE PDF & IMAGE TO WORD CONVERTER")
         print("========================================================")
-        print(f"No PDF files found in the '{UPLOAD_DIR}' folder.")
-        print("Please copy your scanned or normal PDFs into the 'upload' folder")
+        print(f"No PDF or image files found in the '{UPLOAD_DIR}' folder.")
+        print(f"Supported formats: .pdf, {', '.join(IMAGE_EXTENSIONS)}")
+        print("Please copy your documents or images into the 'upload' folder")
         print("and run this script again:")
         print("  python main.py")
         print("========================================================\n")
         return
         
     print("\n========================================================")
-    print(f"       Found {len(pdf_files)} PDF(s) to process. Starting batch job...")
+    print(f"       Found {len(input_files)} file(s) to process. Starting batch job...")
     print("========================================================\n")
     
     success_count = 0
     fail_count = 0
+    pdf_count = 0
+    image_count = 0
     start_time = time.time()
     
-    for idx, filename in enumerate(pdf_files, start=1):
-        input_pdf_path = os.path.join(UPLOAD_DIR, filename)
-        
-        # Output filename has the same name but with a .docx extension
+    for idx, filename in enumerate(input_files, start=1):
+        input_path = os.path.join(UPLOAD_DIR, filename)
         basename = os.path.splitext(filename)[0]
         output_docx_path = os.path.join(OUTPUT_DIR, f"{basename}.docx")
         
-        print(f"[{idx}/{len(pdf_files)}] Processing '{filename}'...")
+        print(f"[{idx}/{len(input_files)}] Processing '{filename}'...")
         file_start_time = time.time()
         
-        # Check if the PDF is scanned or digital
-        scanned = is_scanned_pdf(input_pdf_path)
-        
+        temp_input_pdf = None
         temp_searchable_pdf = None
-        conversion_source = input_pdf_path
         
-        if scanned:
-            print(f"[Info] '{filename}' is detected as SCANNED. Preparing OCR...")
-            # We create a temporary searchable PDF file
-            temp_searchable_pdf = os.path.join(UPLOAD_DIR, f"temp_searchable_{basename}.pdf")
-            
-            ocr_success = make_searchable_pdf(input_pdf_path, temp_searchable_pdf)
-            if ocr_success and os.path.exists(temp_searchable_pdf):
-                conversion_source = temp_searchable_pdf
-            else:
-                print(f"[Error] OCR failed for '{filename}'. Cannot perform text extraction.")
-                fail_count += 1
-                print("-" * 50)
-                continue
+        if is_image_file(filename):
+            image_count += 1
+            print(f"[Info] '{filename}' is detected as IMAGE. Performing direct high-accuracy OCR conversion...")
+            convert_success = convert_image_or_scanned_pdf_to_docx(input_path, output_docx_path)
         else:
-            print(f"[Info] '{filename}' is detected as DIGITAL. Direct conversion enabled.")
-            
-        # Perform PDF to Word conversion
-        convert_success = convert_pdf_to_docx(
-            conversion_source, 
-            output_docx_path, 
-            is_scanned=scanned
-        )
-        
-        # Clean up temporary searchable PDF file if created
-        if temp_searchable_pdf and os.path.exists(temp_searchable_pdf):
-            try:
-                os.remove(temp_searchable_pdf)
-                # If an associated PyMuPDF / Tesseract lock file exists, clean it up as well
-                tess_lock = temp_searchable_pdf + ".lock"
-                if os.path.exists(tess_lock):
-                    os.remove(tess_lock)
-            except Exception as e:
-                # Silently ignore cleanup errors
-                pass
+            pdf_count += 1
+            scanned = is_scanned_pdf(input_path)
+            if scanned:
+                print(f"[Info] '{filename}' is detected as SCANNED PDF. Performing direct high-accuracy OCR conversion...")
+                convert_success = convert_image_or_scanned_pdf_to_docx(input_path, output_docx_path)
+            else:
+                print(f"[Info] '{filename}' is detected as DIGITAL PDF. Direct layout conversion enabled...")
+                convert_success = convert_pdf_to_docx(input_path, output_docx_path, is_scanned=False)
                 
         elapsed = time.time() - file_start_time
         if convert_success:
@@ -111,7 +96,9 @@ def process_pdfs():
     print("\n========================================================")
     print("                 CONVERSION SUMMARY")
     print("========================================================")
-    print(f"Total processed files : {len(pdf_files)}")
+    print(f"Total processed files : {len(input_files)}")
+    print(f"  - PDFs processed    : {pdf_count}")
+    print(f"  - Images processed  : {image_count}")
     print(f"Successfully converted: {success_count}")
     print(f"Failed conversions    : {fail_count}")
     print(f"Total time elapsed    : {total_elapsed:.2f} seconds")
@@ -119,4 +106,4 @@ def process_pdfs():
     print("========================================================\n")
 
 if __name__ == "__main__":
-    process_pdfs()
+    process_documents()

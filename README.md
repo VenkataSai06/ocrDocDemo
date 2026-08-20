@@ -1,6 +1,6 @@
-# Offline PDF to Word Converter (with Layout, OCR & Table Preservation)
+# Offline PDF & Image to Word Converter (with Layout, OCR & Table Preservation)
 
-This is a robust, offline Python application that batch-converts both **digital (searchable)** and **scanned (image-based)** PDFs into editable Microsoft Word (`.docx`) documents. 
+This is a robust, offline Python application that batch-converts **digital (searchable) PDFs**, **scanned PDFs**, and **images** (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) into editable Microsoft Word (`.docx`) documents. 
 
 It is specifically optimized to maintain layout structure, columns, tables, headings, paragraphs, and active hyperlinks without requiring any internet connection.
 
@@ -8,6 +8,7 @@ It is specifically optimized to maintain layout structure, columns, tables, head
 
 ## ✨ Features
 
+- **🖼️ Image & Scanned Document Support**: Automatically processes standalone images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) and scanned PDFs into editable Word documents.
 - **🧠 Auto-Classification**: Automatically detects whether a PDF is digital or scanned based on character density.
 - **🔍 Dual Offline OCR Engine**:
   - Automatically searches for a local **Tesseract OCR** installation for fast processing.
@@ -16,7 +17,7 @@ It is specifically optimized to maintain layout structure, columns, tables, head
   - **Horizontal Overlap Prevention**: Separates adjacent lines (like footers) to prevent them from merging vertically or getting ignored due to overlap.
   - **Height-Width Balanced Font Scaling**: Calculates text boundaries and adjusts font sizes so text fits perfectly without getting clipped/cut off at page margins, while maintaining a minimum size floor of `6.0pt` to avoid size instability.
   - **Hyperlink Extraction**: Detects web URLs (using regex patterns) and overlays active, clickable hyperlinks in the output Word document.
-- **📊 Scanned Table Reconstruction**:
+- **📊 Scanned Table & Image Table Reconstruction**:
   - Leverages the **`img2table`** library to analyze scanned images and detect table cell borders.
   - Dynamically overlays cell vector lines onto the temporary searchable PDF layer, allowing `pdf2docx` to reconstruct them as native, editable Word tables instead of plain text.
 
@@ -46,8 +47,8 @@ pip install -r requirements.txt
 
 ## 🚀 How to Run the Converter
 
-1. **Place PDFs in `upload/`**:
-   Put the scanned and digital PDFs you want to convert into the `upload/` folder.
+1. **Place Files in `upload/`**:
+   Put scanned PDFs, digital PDFs, or image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) into the `upload/` folder.
    
 2. **Execute the Runner**:
    ```bash
@@ -56,5 +57,3 @@ pip install -r requirements.txt
    
 3. **Get Word Documents in `output_files/`**:
    The converted, editable Word documents (`.docx`) will be saved in the `output_files/` folder under the same filenames.
-
-
