@@ -1,0 +1,12 @@
+{
+  "621": {
+    "system": "INS",
+    "canonical_name": "Monosodium Glutamate",
+    "synonyms": ["MSG", "E621", "INS 621", "INS621", "Monosodium Glutamate"]
+  },
+  "322": {
+    "system": "INS",
+    "canonical_name": "Lecithin",
+    "synonyms": ["INS 322", "E322", "Lecithin"]
+  }
+}

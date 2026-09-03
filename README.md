@@ -1,59 +1,178 @@
-# Offline PDF & Image to Word Converter (with Layout, OCR & Table Preservation)
+# OCR Food Intelligence Pipeline
 
-This is a robust, offline Python application that batch-converts **digital (searchable) PDFs**, **scanned PDFs**, and **images** (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) into editable Microsoft Word (`.docx`) documents. 
+This project combines a document OCR pipeline with a food-label intelligence workflow for structured extraction and normalization.
 
-It is specifically optimized to maintain layout structure, columns, tables, headings, paragraphs, and active hyperlinks without requiring any internet connection.
+It was originally built as an offline document converter, and it is now extended with a food intelligence pipeline that processes uploaded food-label images and produces:
 
----
-
-## ✨ Features
-
-- **🖼️ Image & Scanned Document Support**: Automatically processes standalone images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) and scanned PDFs into editable Word documents.
-- **🧠 Auto-Classification**: Automatically detects whether a PDF is digital or scanned based on character density.
-- **🔍 Dual Offline OCR Engine**:
-  - Automatically searches for a local **Tesseract OCR** installation for fast processing.
-  - Automatically falls back to a high-accuracy **EasyOCR** (PyTorch-based) engine when Tesseract is not installed.
-- **📐 Advanced Layout Preservation**:
-  - **Horizontal Overlap Prevention**: Separates adjacent lines (like footers) to prevent them from merging vertically or getting ignored due to overlap.
-  - **Height-Width Balanced Font Scaling**: Calculates text boundaries and adjusts font sizes so text fits perfectly without getting clipped/cut off at page margins, while maintaining a minimum size floor of `6.0pt` to avoid size instability.
-  - **Hyperlink Extraction**: Detects web URLs (using regex patterns) and overlays active, clickable hyperlinks in the output Word document.
-- **📊 Scanned Table & Image Table Reconstruction**:
-  - Leverages the **`img2table`** library to analyze scanned images and detect table cell borders.
-  - Dynamically overlays cell vector lines onto the temporary searchable PDF layer, allowing `pdf2docx` to reconstruct them as native, editable Word tables instead of plain text.
+- OCR output
+- Structured food label extraction
+- Normalized ingredient/additive mapping
+- Validation and traceability reports
 
 ---
 
-## 🛠️ Setup & Installation
+## Overview
 
-### 1. Prerequisites
-- **Python 3.8 to 3.11** installed on your system.
-- *(Optional but recommended)* **Tesseract OCR** installed on Windows. The engine will locate it automatically in program directories. If not present, it will fallback to EasyOCR.
+The application currently supports:
 
-### 2. Clone and Setup Environment
-Open a terminal (PowerShell on Windows) and run:
+1. Uploading an image into the `upload/` folder
+2. Running the OCR pipeline
+3. Extracting structured food label information
+4. Normalizing ingredients and additive codes
+5. Validating the results
+6. Saving readable outputs into `output_files/`
+
+This is designed to support a future RAG + LLM food intelligence layer, while keeping the current implementation deterministic and traceable.
+
+---
+
+## Project Structure
+
+```text
+ocrDocDemo/
+├── main.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+├── upload/
+│   └── .gitkeep
+├── output_files/
+│   └── .gitkeep
+├── ocr_engine/
+│   ├── __init__.py
+│   ├── ocr.py
+│   └── pdf_converter.py
+├── food_intelligence/
+│   ├── __init__.py
+│   ├── extractors.py
+│   ├── mapping_loader.py
+│   ├── normalization.py
+│   ├── pipeline.py
+│   ├── schemas.py
+│   ├── service.py
+│   ├── mappings/
+│   │   ├── ingredients.json
+│   │   ├── additives.json
+│   │   └── synonyms.json
+│   └── tests/
+│       └── test_food_pipeline.py
+└── .venv/
+```
+
+---
+
+## Features
+
+### OCR / document conversion
+- Image and PDF processing
+- OCR extraction using the existing offline processing flow
+- Output written to the project output folder
+
+### Module 1: OCR
+- Raw OCR text capture
+- Region list with confidence values
+- Document metadata extraction
+
+### Module 2: Structured extraction
+- Ingredients extraction
+- Nutrition parsing
+- Serving size extraction
+- Additive / INS / E-number extraction
+- Allergen detection
+- Traceability through raw text and cleaned text
+
+### Module 3: Normalization and validation
+- Ingredient synonym mapping
+- Additive canonical mapping
+- Standardized output structure
+- Validation status and review flags
+
+---
+
+## Setup
+
+### 1. Create a virtual environment
 
 ```powershell
-# Create a virtual environment
 python -m venv .venv
-
-# Activate the virtual environment
 .venv\Scripts\activate
+```
 
-# Install dependencies
+### 2. Install dependencies
+
+```powershell
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🚀 How to Run the Converter
+## Run the project
 
-1. **Place Files in `upload/`**:
-   Put scanned PDFs, digital PDFs, or image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) into the `upload/` folder.
-   
-2. **Execute the Runner**:
-   ```bash
-   python main.py
-   ```
-   
-3. **Get Word Documents in `output_files/`**:
-   The converted, editable Word documents (`.docx`) will be saved in the `output_files/` folder under the same filenames.
+Place one or more food-label images in `upload/` and run:
+
+```powershell
+python main.py
+```
+
+The script will:
+
+- scan the upload folder
+- process the image(s)
+- run the OCR + extraction + normalization pipeline
+- generate output files in `output_files/`
+
+---
+
+## Output files
+
+For each uploaded image, the app writes files such as:
+
+```text
+output_files/
+├── image_name_module1_ocr.json
+├── image_name_module2_extraction.json
+├── image_name_module3_normalized.json
+├── image_name_final_output.json
+├── image_name_report.txt
+└── image_name.docx
+```
+
+The JSON files are designed to be readable and structured for later API integration or RAG-based intelligence workflows.
+
+---
+
+## Notes
+
+- Missing data is preserved as `null` rather than guessed.
+- Validation is intentionally conservative and flags uncertain or incomplete values as `needs_review`.
+- The project is designed to be extended toward future MongoDB, RAG, and LLM-based food-intelligence features.
+
+---
+
+## Example workflow
+
+```text
+Upload image
+  ↓
+OCR scan
+  ↓
+Structured food extraction
+  ↓
+Normalization
+  ↓
+Validation
+  ↓
+Readable JSON + report output
+```
+
+---
+
+## Requirements
+
+The project uses Python and the dependencies listed in `requirements.txt`.
+
+---
+
+## License
+
+This project is intended for educational and internal prototype use unless otherwise specified by the repository owner.
